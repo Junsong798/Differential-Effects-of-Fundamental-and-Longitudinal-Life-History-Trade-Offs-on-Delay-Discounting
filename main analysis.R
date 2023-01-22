@@ -1,19 +1,20 @@
 # Results
 
-# Author: Amadeus
+# Author: Junsong Lu
 # Version: 2021-11-24
 
 # Libraries
-library(tidyverse)
-library(rstatix)
-library(corrplot)
-library(Rfit)
-library(mediation)
-library(WRS2)
-library(sfsmisc)
-library(psych)
-library(MBESS)
-library(robustbase)
+
+required_pack <- c('tidyverse','rstatix','corrplot', 'Rfit', 'mediation', 
+                   'WRS2', 'sfsmisc', 'psych', 'MBESS', 'robustbase')
+
+for(p in required_pack){
+  if(!require(p, character.only = TRUE)){
+    install.packages(p)
+  }else{
+    library(p, character.only = TRUE)
+  }
+} 
 
 # Sources
 dat <- read_csv("data.csv")
@@ -29,7 +30,7 @@ dat %>%
 
 # Code
 
-## reliability
+## Reliability
 
 dat_minik <- dat %>%
   dplyr::select(minik1:minik20)
@@ -71,7 +72,7 @@ dat %>%
   group_by(age_group) %>%
   summarise(across(age, list(mean = mean, sd = sd, range = range)))
 
-### delay discounting 
+### Delay discounting 
 summary(dat$k)
 
 ggplot(dat %>%
@@ -94,7 +95,7 @@ ggplot(dat %>%
                col = "#D53E4F", size = 1.5) +
   theme_bw()
 
-### subjective health
+### Subjective health
 
 dat %>%
   group_by(age_group) %>%

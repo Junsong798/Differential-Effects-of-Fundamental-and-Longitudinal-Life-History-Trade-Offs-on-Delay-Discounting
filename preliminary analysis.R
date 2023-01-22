@@ -1,15 +1,22 @@
-# Data Cleaning
+# Data Wrangling
 
-# Author: Amadeus
+# Author: Junsong Lu
 # Version: 2021-11-21
 
 # Libraries
-library(drc)
-library(WRS2)
-library(nlme)
-library(aomisc)
-library(rstatix)
-library(tidyverse)
+
+required_pack <- c('drc','WRS2','nlme', 'aomisc', 'rstatix', 'tidyverse')
+
+for(p in required_pack){
+  if(!require(p, character.only = TRUE)){
+    install.packages(p)
+  }else{
+    library(p, character.only = TRUE)
+  }
+} 
+# if 'aomisc' cannot be installed, please use the following code:
+# library(devtools)
+# devtools::install_github("onofriAndreaPG/aomisc")
 
 
 # Sources
@@ -21,7 +28,7 @@ dat <- read_csv("raw.csv")
 
 # Code
 
-## scale
+## scales
 
 dat <- dat %>%
   mutate(across(Item19:Item21, ~ recode(.,
@@ -39,7 +46,7 @@ dat <- dat %>%
   rowwise() %>%
   mutate(ss_count = sum(c_across(Item5:Item11) == 1))
 
-## transformation of subjective time
+## the transformation of subjective time
 
 dat <- dat %>%
   mutate(across(Item22:Item31, ~ ifelse(. <= 100, .,

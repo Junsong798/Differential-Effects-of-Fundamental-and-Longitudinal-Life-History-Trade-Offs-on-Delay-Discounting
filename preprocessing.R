@@ -170,7 +170,7 @@ est_para <- function(data){
   
 }
 
-dat_dd_mle <- dat_dd_mle %>%
+edat_dd_mle <- dat_dd_mle %>%
   mutate(para = map(data, possibly(est_para, list(k = NA,
                                                   mu = NA)))) %>%
   unnest(para) %>%
