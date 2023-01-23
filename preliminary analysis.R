@@ -178,11 +178,8 @@ dat <- dat %>%
                                        "middle",
                                        "old")))
 
-
-
 dat <- dat %>%
   mutate(across(ST1:ST10, ~ ./19.28291*3, .names = "{.col}_sub"))
-
 
 OT <- c(3, 6, 9, 12, 15, 21, 24, 30, 36, 60) # objective time
 
@@ -233,7 +230,7 @@ dat %>%
 dat_mest <- dat %>% # calculate the M-estimator of subjective time for each group 
   group_by(age_group) %>%
   filter(alpha != 5, beta <= 1.323433) %>%
-  summarise(across(ST1_sub:ST10_sub, list(M = median)))
+  summarise(across(ST1_sub:ST10_sub, list(M = mest)))
 
 mest_long <- dat_mest %>%
   pivot_longer(cols = contains("sub_M"),
