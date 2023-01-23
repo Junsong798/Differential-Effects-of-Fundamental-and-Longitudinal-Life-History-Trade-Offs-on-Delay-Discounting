@@ -48,9 +48,12 @@ dat <- dat %>%
 
 ## the transformation of subjective time
 
-dat <- dat %>%
+dat <- dat %>% 
   mutate(across(Item22:Item31, ~ ifelse(. <= 100, .,
                                         (. - 42648)/(87551 - 42648)*100)))
+
+  # time perception was recorded using slider questions and thus required
+  # normalization. Scale points range from 42648 to 87551.
 
 ## rename variables
 
@@ -75,7 +78,7 @@ dat_dd <- dat %>%
 k_item <- function(V, A, D){
   k <- (A - V)/(V*D)
   return(k)
-}
+} # calculate the k value of each item, which is redundant here.
 
 D <- c(31, 4, 939, 183, 527, 25, 184)
 A <- c(3480, 8190, 2311, 4620, 4200, 5160, 2760) # LL
@@ -90,12 +93,12 @@ dat_dd_order <- dat_dd %>%
   select(ID, c(order(k_items7) + 1)) %>%
   as_tibble()
 
-### MLE
+### maximum likelihood estimation
 
 nll2 <- function(pars, data) {
   
-  k <- pars[1]
-  mu <- pars[2]
+  k <- pars[1] # the discounting rate
+  mu <- pars[2] # a free parameter reflecting the degree of choice variability
   
   prob_SV1 <- vector("numeric", length = 7)
   f <- vector("numeric", length = 7)
@@ -117,7 +120,7 @@ nll2 <- function(pars, data) {
   }
   
   -sum(log(f))
-}
+} # the sample log-likelihood is the sum of individual log-likelihood values
 
 
 dat_dd_mle <- dat_dd %>%
@@ -125,7 +128,8 @@ dat_dd_mle <- dat_dd %>%
                names_to = "NO",
                values_to = "choice") %>%
   select(-NO) %>%
-  nest(data = choice)
+  nest(data = choice) # create list columns. Therefore, 
+  # observations for each subject are nested in one row.
 
 est_para <- function(data){
   
@@ -149,10 +153,10 @@ dat_dd_mle <- dat_dd_mle %>%
   unnest(para) %>%
   mutate(para_name = rep(c("k", "mu"), times = 242)) %>%
   pivot_wider(names_from = para_name,
-              values_from = para)
+              values_from = para) # estimate delay discounting for each participant
 
 dat <- left_join(dat, dat_dd_mle, by = "ID") %>%
-  mutate(across(k:mu, unlist))
+  mutate(across(k:mu, unlist)) 
 
 
 # subjective time estimates
@@ -160,10 +164,10 @@ dat <- left_join(dat, dat_dd_mle, by = "ID") %>%
 
 ggplot(dat) +
   geom_histogram(aes(age)) +
-  theme_bw()
+  theme_bw() # it seems that age follows a multimodal distribution
 
 dat <- dat %>%
-  mutate(age_group = case_when(
+  mutate(age_group = case_when( # so I classified participants into three groups
     age <= 35 ~ 0,
     age > 35 & age <= 50 ~ 1,
     age > 50 ~ 2
@@ -180,9 +184,9 @@ dat <- dat %>%
   mutate(across(ST1:ST10, ~ ./19.28291*3, .names = "{.col}_sub"))
 
 
-OT <- c(3, 6, 9, 12, 15, 21, 24, 30, 36, 60)
+OT <- c(3, 6, 9, 12, 15, 21, 24, 30, 36, 60) # objective time
 
-dat_st <- dat %>%
+dat_st <- dat %>% # data for estimating time perception parameters
   dplyr::select(ends_with("_sub"), ID) %>%
   pivot_longer(cols = starts_with("ST"),
                names_to = "NO",
@@ -191,8 +195,8 @@ dat_st <- dat %>%
   dplyr::select(-NO) %>%
   nest(data = c(obj_time, sub_time))
 
-est_time <- function(data){
-  
+est_time <- function(data){ # estimate time perception parameters using a 
+                            # dose-response model.
   dat <- data %>% as.data.frame()
   
   model <- drm(sub_time ~ obj_time, fct = DRC.powerCurve(),
@@ -202,8 +206,8 @@ est_time <- function(data){
                upperl = c(5, 5),
                data = dat)
   
-  return(list(alpha = model$parmMat[1],
-              beta = model$parmMat[2]))
+  return(list(alpha = model$parmMat[1], # alpha: the overall level of time contraction
+              beta = model$parmMat[2])) # beta: diminishing sensitivity
   
 }
 
@@ -219,17 +223,17 @@ dat <- dat %>%
   left_join(., dat_st, by = "ID") %>%
   mutate(across(alpha:beta, unlist))
 
-boxplot.stats(dat$beta)$out
-boxplot.stats(dat$alpha)$out
-sum(dat$alpha == 5)
-
+boxplot.stats(dat$beta)$out # outlier detection. Values greater than 1.32 might be extreme values.
+boxplot.stats(dat$alpha)$out 
+sum(dat$alpha == 5) # the number of cases that reached the upper limit for the parameter
+                  
 dat %>%
   filter(alpha != 5, beta <= 1.323433)
 
-dat_mest <- dat %>%
+dat_mest <- dat %>% # calculate the M-estimator of subjective time for each group 
   group_by(age_group) %>%
   filter(alpha != 5, beta <= 1.323433) %>%
-  summarise(across(ST1_sub:ST10_sub, list(M = median))) 
+  summarise(across(ST1_sub:ST10_sub, list(M = median)))
 
 mest_long <- dat_mest %>%
   pivot_longer(cols = contains("sub_M"),
@@ -263,8 +267,8 @@ obj_to_sub <- function(obj_delay, age_group){
   }else if(age_group == "middle"){
     sub_delay <- 1.08*(obj_delay^0.614)
   }else{
-    sub_delay <- 1.34*(obj_delay^0.578)
-  }
+    sub_delay <- 1.34*(obj_delay^0.578) # predict subjective time perception based on 
+  }                                     # estimated parameters
   return(sub_delay)
 }
 
@@ -291,7 +295,7 @@ F2 <- ggplot(dat_time_curve %>%
         legend.title = element_text(size = 9, face = "bold"),
         legend.text = element_text(size = 8.5))
 
-cowplot::plot_grid(F1, F2, nrow = 1)
+cowplot::plot_grid(F1, F2, nrow = 1) # Figure 2
 
 
 # png("time_est.png", units = "in",
